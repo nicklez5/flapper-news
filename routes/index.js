@@ -15,7 +15,7 @@ var Post = mongoose.model('Post');
 var Comment = mongoose.model('Comment');
 var User = mongoose.model('User');
 
-var auth = jwt({secret: 'SECRET', userProperty: 'payload'})
+var auth = jwt({secret: 'SECRET', userProperty: 'payload', algorithms: ['HS256']})
 
 
 router.get('/posts', function(req,res,next){
