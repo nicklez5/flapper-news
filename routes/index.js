@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
-var jwt = require('express-jwt');
+var express_jwt = require('express-jwt');
+var jwt = require('jsonwebtoken');
 
 
 
@@ -15,7 +16,7 @@ var Post = mongoose.model('Post');
 var Comment = mongoose.model('Comment');
 var User = mongoose.model('User');
 
-var auth = jwt({secret: 'SECRET', userProperty: 'payload', algorithms: ['HS256']})
+var auth = express_jwt({secret: process.env.JWT_SECRET, algorithms: ['HS256'], userProperty: 'payload'});
 
 
 router.get('/posts', function(req,res,next){
@@ -106,31 +107,34 @@ router.post('/login', function(req, res, next){
 
   passport.authenticate('local', function(err, user, info){
     if(err){ return next(err); }
-
+    //const accessToken = jwt.sign(user.toObject(), process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRATION_TIME, });
     if(user){
-      return res.json({token: user.generateJWT()});
+      const accessToken = jwt.sign({, process.env.JWT_SECRET)
+      return res.json({ accessToken: accessToken });
     } else {
-      return res.status(401).json(info);
+      return res.json({ message: "Invalid Credentials" });
     }
   })(req, res, next);
 });
 
-router.post('/register', function(req, res, next){
+router.post('/register', function (req, res,next){
   if(!req.body.username || !req.body.password){
     return res.status(400).json({message: 'Please fill out all fields'});
   }
-  
   var user = new User();
-
   user.username = req.body.username;
-
-  user.setPassword(req.body.password)
+  try{
+    user.setPassword(req.body.password);
+    const savedUser = user.save();
+    const accessToken = jwt.sign({name: req.body.username} , process.env.JWT_SECRET)
+    return res.json({token: accessToken })
+  }catch(e){
+    res.json({message: "Error"});
+  }
   
-  user.save(function (err){
-    if(err){ return next(err); }
-
-    return res.json({token: user.generateJWT()})
-  });
 });
+
+
+
 
 module.exports = router;
